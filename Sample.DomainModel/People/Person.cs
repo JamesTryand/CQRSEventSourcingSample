@@ -12,9 +12,9 @@ namespace Sample.DomainModel.People
     /// <summary>
     /// Sample aggregate root in the domain. 
     /// </summary>
-    public class Person : AggregateBase<IEvent>
+    public partial class Person : AggregateBase<IEvent>
     {
-        private PersonName name;
+		private PersonName name;
         private Address currentAddress;
         private bool isAlive;
 
@@ -25,6 +25,11 @@ namespace Sample.DomainModel.People
         {
             this.Id = id;
         }
+
+		public Person()
+		{
+			this.Id = Guid.NewGuid();
+		}
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Person"/> class.
