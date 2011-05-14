@@ -26,7 +26,7 @@ namespace Sample.DomainModel.People
             this.Id = id;
         }
 
-		public Person()
+		public Person() : base()
 		{
 			this.Id = Guid.NewGuid();
 		}
@@ -42,7 +42,9 @@ namespace Sample.DomainModel.People
             this.Id = id;
             // the event will be routed by convention to a method called ApplyEvent(type of event)
             RaiseEvent(new PersonCreated(id, name.Value,address.Street,address.Number));
+			
         }
+
 
         /// <summary>
         /// Factory method for creating person objects.

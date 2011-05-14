@@ -49,6 +49,7 @@
   <ItemGroup>
     <Compile Include="AggregateRootTestFixture.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SimplePersonSpec.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Sample.DomainModel\Sample.DomainModel.csproj">

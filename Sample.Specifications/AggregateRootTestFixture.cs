@@ -9,53 +9,14 @@ using CommonDomain.Core;
 using Sample.Messages;
 using NUnit.Framework;
 
-
-using Sample.Messages.Events.People;
-using Sample.DomainModel.People;
-
 namespace Sample.Specifications
 {
 
-	public abstract class AggregateRootTestFixture<T> where T : IAggregate, new()
-	{
+	public class SpecificationAttribute : TestFixtureAttribute { }
+	public class GivenAttribute : SetUpAttribute { }
+	public class ThenAttribute : TestAttribute { }
+	public class AndAttribute : ThenAttribute { }
 
-		protected Guid sutId = Guid.NewGuid();
-
-		protected Guid itemId = Guid.NewGuid();
-		protected IAggregate root;
-		protected Exception caught = null;
-		protected T sut;
-		protected List<IEvent> events;
-		// protected ICollection events;
-		// protected Queue events;
-
-		// protected IEnumerable<IEvent> Given(); //TODO: is this the correct implementation?!
-		protected abstract IEnumerable<IEvent> Given();
-		protected abstract void When();
-
-		[SetUp]
-		public void Setup()
-		{
-		
-			root = new T();
-			// root.LoadsFromHistory(Given());
-			root.LoadsFromHistory(Given());
-			try
-			{
-				When();
-				events = new List<IEvent>((IEnumerable<IEvent>)root.GetUncommittedEvents());
-				// events.Add(new PersonDied(itemId));
-			
-				// events = new Queue(root.GetUncommittedEvents()); //NOTE: Get something better here.
-			}
-			catch (Exception Ex)
-			{
-				caught = Ex;
-			}
-		}
-
-
-	}
 	public static class AggregateHelpers
 	{
 		public static void LoadsFromHistory(this IAggregate aggregate, IEnumerable<IEvent> history)
@@ -65,72 +26,54 @@ namespace Sample.Specifications
 				aggregate.ApplyEvent(@event);
 			}
 		}
-
- 		//TODO: Add a helper method to be able to get the uncommitted eventstream.
 	}
 
-
-	[TestFixture]
-	public class FirstPersonUseCase : AggregateRootTestFixture<Person>
+	[Specification]
+	public abstract class AggregateRootTestFixture<TAggregateRoot> where TAggregateRoot : IAggregate, new()
 	{
-		// private Person sut;
 
-		protected override IEnumerable<IEvent> Given()
+		protected TAggregateRoot AggregateRoot { get; set; }
+
+		protected Exception CaughtException { get; private set; }
+
+		protected IEnumerable<IEvent> PublishedEvents { get; private set; }
+		// protected ICollection PublishedEvents { get; private set; }
+
+		protected virtual IEnumerable<IEvent> Given()
 		{
-			// var bob = new PersonCreated(itemId, "Bob", "Carlton Street", "4");
-
-			sut = Person.CreatePerson(itemId, "Bob", "Carlton Street", "4");
-
-			var esource = new IEvent[] { 
-				// new PersonCreated(itemId, "Bob", "Carlton Street", "4")
-			}.AsEnumerable();
-
-			return esource;
+			return null;
 		}
 
-		protected override void When()
+		protected virtual void Finally() { }
+
+		protected abstract void When();
+
+		[Given]
+		public void Setup()
 		{
-			sut.MoveToAddress(new Address("Blockstone Road", "43"));
-		}
+		
+			AggregateRoot = new TAggregateRoot();
+			PublishedEvents = new IEvent[0];
 
-		[Test]
-		public void Then_the_address_should_be_at_blockstone_road()
-		{
-			Console.WriteLine("Uncommitted Root : {0}",root.GetUncommittedEvents().Count);
-			if (events != null)
+			var history = Given();
+			if (history != null)
 			{
-				Console.WriteLine("Events are NOT null :\\ ");
-			}
-			else
-			{
-				Console.WriteLine("Events are a type of {0}", events.GetType().ToString());
-			}
-			Console.WriteLine("Events are a type of {0}", events.ToString());
-
-			PersonMoved p;
-			// events.Where<IEvent>(e => e is PersonMoved).Select(e => e); 
-			Assert.That( //1 == 1,"");
-				events.Count == 1, "There was 1 event expected but there was {0} Events.", events.Count);
-			// Assert.That(events.Where(e => typeof e is PersonMoved && (PersonMoved)e ),"");
-
-			// p = events.Where(e => e is IEnumerable<PersonMoved> ).First<PersonMoved>();
-			// p = (PersonMoved)events.Peek();
-			if (events[0] != null )
-			{
-				p = (PersonMoved)events[0];
-			
-			}
-			else
-			{
-				throw new Exception();
+				AggregateRoot.LoadsFromHistory(history);
 			}
 
-
-			Assert.That(p.Id == itemId, "Wrong Id"); 
-			Assert.That(p.NewNumber == "43", "Wrong NewNumber"); 
-			Assert.That(p.NewStreet == "Blockstone Road", "Wrong NewStreet"); 
-			Assert.That(p.OldNumber == "4", "Wrong OldNumber"); 
-			Assert.That(p.OldStreet == "Carlton Street", "Wrong OldSteet");  
+			try
+			{
+				When();
+				PublishedEvents = (IEnumerable<IEvent>)AggregateRoot.GetUncommittedEvents();
+			}
+			catch (Exception exception)
+			{
+				CaughtException = exception;
+			}
+			finally
+			{
+				Finally();
+			}
 		}
 	}
 }
